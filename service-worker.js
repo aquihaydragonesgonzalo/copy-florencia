@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'florencia-guide-v3';
+const CACHE_NAME = 'florencia-guide-v4-fix';
 const ASSETS = [
   './',
   './index.html',
@@ -9,8 +9,7 @@ const ASSETS = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://unpkg.com/react@18/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-  'https://unpkg.com/recharts@2.12.7/umd/Recharts.js'
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js'
 ];
 
 self.addEventListener('install', (e) => {
@@ -20,30 +19,13 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
     e.waitUntil(
-        caches.keys().then((keyList) => {
-            return Promise.all(keyList.map((key) => {
-                if (key !== CACHE_NAME) {
-                    return caches.delete(key);
-                }
-            }));
-        })
+        caches.keys().then((keys) => Promise.all(keys.map(k => k !== CACHE_NAME && caches.delete(k))))
     );
     self.clients.claim();
 });
 
 self.addEventListener('fetch', (e) => {
   e.respondWith(
-    caches.match(e.request).then(res => {
-        // Estrategia Stale-While-Revalidate simple
-        return res || fetch(e.request).then(response => {
-            return caches.open(CACHE_NAME).then(cache => {
-                // Solo cachear peticiones válidas y locales/CDN confiables
-                if (e.request.url.startsWith('http')) {
-                    cache.put(e.request, response.clone());
-                }
-                return response;
-            });
-        });
-    })
+    caches.match(e.request).then(res => res || fetch(e.request))
   );
 });
